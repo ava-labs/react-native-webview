@@ -767,7 +767,25 @@ RCTAutoInsetsProtocol>
   } else if ([message.name isEqualToString:MessageHandlerName]) {
     if (_onMessage) {
       NSMutableDictionary<NSString *, id> *event = [self baseEvent];
-      [event addEntriesFromDictionary: @{@"data": message.body}];
+      
+      NSString *safePayload;
+      id messageBody = message.body;
+
+      if ([messageBody isKindOfClass:[NSString class]]) {
+          safePayload = messageBody;
+      } else if ([NSJSONSerialization isValidJSONObject:messageBody]) {
+          NSError *error = nil;
+          NSData *jsonData = [NSJSONSerialization dataWithJSONObject:messageBody options:0 error:&error];
+          if (!error && jsonData) {
+              safePayload = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+          } else {
+              safePayload = [messageBody description];
+          }
+      } else {
+          safePayload = [messageBody description];
+      }
+
+      event[@"data"] = safePayload ?: @"";
       _onMessage(event);
     }
   }
