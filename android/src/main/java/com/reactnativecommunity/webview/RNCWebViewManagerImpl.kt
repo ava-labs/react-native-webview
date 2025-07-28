@@ -33,7 +33,7 @@ import java.util.Locale
 
 val invalidCharRegex = "[\\\\/%\"]".toRegex()
 
-class RNCWebViewManagerImpl {
+class RNCWebViewManagerImpl(private val newArch: Boolean = false) {
     companion object {
         const val NAME = "RNCWebView"
     }
@@ -45,6 +45,7 @@ class RNCWebViewManagerImpl {
     private var mDownloadingMessage: String? = null
     private var mLackPermissionToDownloadMessage: String? = null
     private var mHasOnOpenWindowEvent = false
+    private var mPendingSource: ReadableMap? = null
 
     private var mUserAgent: String? = null
     private var mUserAgentWithApplicationName: String? = null
@@ -278,6 +279,13 @@ class RNCWebViewManagerImpl {
         viewWrapper.webView.setBasicAuthCredential(basicAuthCredential)
     }
 
+    fun onAfterUpdateTransaction(viewWrapper: RNCWebViewWrapper) {
+        mPendingSource?.let { source ->
+            loadSource(viewWrapper, source)
+        }
+        mPendingSource = null
+    }
+
     fun onDropViewInstance(viewWrapper: RNCWebViewWrapper) {
         val webView = viewWrapper.webView
         webView.themedReactContext.removeLifecycleEventListener(webView)
@@ -343,11 +351,9 @@ class RNCWebViewManagerImpl {
         }
         "injectJavaScript" -> webView.evaluateJavascriptWithFallback(args.getString(0))
         "loadUrl" -> {
-          if (args == null) {
-            throw RuntimeException("Arguments for loading an url are null!")
-          }
+          val url = args?.getString(0) ?: throw RuntimeException("Arguments for loading an url are null!")
           webView.progressChangedFilter.setWaitingForCommandLoadUrl(false)
-          webView.loadUrl(args.getString(0))
+          webView.loadUrl(url)
         }
         "requestFocus" -> webView.requestFocus()
         "clearFormData" -> webView.clearFormData()
@@ -383,7 +389,11 @@ class RNCWebViewManagerImpl {
             ?: DEFAULT_LACK_PERMISSION_TO_DOWNLOAD_MESSAGE
     }
 
-    fun setSource(viewWrapper: RNCWebViewWrapper, source: ReadableMap?, newArch: Boolean = true) {
+    fun setSource(viewWrapper: RNCWebViewWrapper, source: ReadableMap?) {
+        mPendingSource = source
+    }
+
+    private fun loadSource(viewWrapper: RNCWebViewWrapper, source: ReadableMap?) {
         val view = viewWrapper.webView
         if (source != null) {
             if (source.hasKey("html")) {
@@ -714,5 +724,12 @@ class RNCWebViewManagerImpl {
 
     fun setWebviewDebuggingEnabled(viewWrapper: RNCWebViewWrapper, enabled: Boolean) {
         RNCWebView.setWebContentsDebuggingEnabled(enabled)
+    }
+
+    fun setPaymentRequestEnabled(viewWrapper: RNCWebViewWrapper, enabled: Boolean) {
+        val view = viewWrapper.webView
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.PAYMENT_REQUEST)) {
+            WebSettingsCompat.setPaymentRequestEnabled(view.settings, enabled)
+        }
     }
 }

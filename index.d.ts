@@ -45,27 +45,26 @@ declare class WebView<P = {}> extends Component<WebViewProps & P> {
   injectJavaScript: (script: string) => void;
 
   /**
-   * Focuses on WebView redered page.
+   * Focuses on WebView rendered page.
    */
   requestFocus: () => void;
-
-  /**
+  
+    /**
    * Posts a message to WebView.
    */
   postMessage: (message: string) => void;
-
-  /**
+  
+    /**
    * (Android only)
    * Removes the autocomplete popup from the currently focused form field, if present.
    */
   clearFormData?: () => void;
 
-  /**
-   * (Android only)
+    /**
    * Clears the resource cache. Note that the cache is per-application, so this will clear the cache for all WebViews used.
    */
-  clearCache?: (clear: boolean) => void;
-
+  clearCache?: (includeDiskFiles: boolean) => void;
+  
   /**
    * (Android only)
    * Tells this WebView to clear its internal back/forward list.
