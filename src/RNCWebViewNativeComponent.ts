@@ -29,6 +29,19 @@ export type WebViewMessageEvent = Readonly<{
   canGoForward: boolean;
   lockIdentifier: Double;
   data: string;
+  /**
+   * Whether the frame that posted this message is the main frame, as reported
+   * by the platform (WKFrameInfo on iOS, WebMessageListener on Android). Page
+   * JS cannot forge it. Android's legacy addJavascriptInterface bridge cannot
+   * report it, so a missing value means "unknown", not "main frame".
+   */
+  isMainFrame: boolean;
+  /**
+   * The posting frame's true security origin as "scheme://host[:port]", or ''
+   * for opaque origins (about:blank, data:, srcdoc, sandboxed). Independent of
+   * any origin the page claims inside the message body.
+   */
+  frameOrigin: string;
 }>;
 export type WebViewOpenWindowEvent = Readonly<{
   targetUrl: string;

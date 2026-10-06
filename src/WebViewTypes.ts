@@ -110,6 +110,27 @@ export type DecelerationRateConstant = 'normal' | 'fast';
 
 export interface WebViewMessage extends WebViewNativeEvent {
   data: string;
+  /**
+   * Whether the frame that posted this message is the main frame, as reported
+   * by the platform — WKFrameInfo.isMainFrame on iOS, WebMessageListener's
+   * isMainFrame on Android — and therefore not forgeable by page JS.
+   *
+   * `undefined` means the platform could not report it (Android devices whose
+   * System WebView predates WEB_MESSAGE_LISTENER and fall back to the legacy
+   * addJavascriptInterface bridge). Treat `undefined` as "unknown", never as
+   * "main frame": any frame can reach the messaging bridge, so security
+   * decisions must fail closed when provenance is unavailable.
+   */
+  isMainFrame?: boolean;
+  /**
+   * The posting frame's true security origin as "scheme://host[:port]" — the
+   * same shape as JS's `new URL(url).origin`, so the two compare directly.
+   * Empty string for opaque origins (about:blank, data:, srcdoc, sandboxed
+   * frames); `undefined` where the platform cannot report it (see
+   * `isMainFrame`). Unlike any origin the page puts in the message body, this
+   * comes from the platform and cannot be spoofed by the page.
+   */
+  frameOrigin?: string;
 }
 
 export interface WebViewError extends WebViewNativeEvent {

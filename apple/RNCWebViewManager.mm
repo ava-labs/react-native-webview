@@ -46,6 +46,7 @@ RCT_CUSTOM_VIEW_PROPERTY(newSource, NSDictionary, RNCWebViewImpl) {}
 RCT_EXPORT_VIEW_PROPERTY(onFileDownload, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingStart, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingFinish, RCTDirectEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onCommit, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingError, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onLoadingProgress, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onHttpError, RCTDirectEventBlock)
