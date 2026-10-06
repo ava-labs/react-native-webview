@@ -25,6 +25,7 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIManagerHelper;
+import com.reactnativecommunity.webview.events.TopCommitEvent;
 import com.reactnativecommunity.webview.events.TopHttpErrorEvent;
 import com.reactnativecommunity.webview.events.TopLoadingErrorEvent;
 import com.reactnativecommunity.webview.events.TopLoadingFinishEvent;
@@ -92,6 +93,23 @@ public class RNCWebViewClient extends WebViewClient {
 
       RNCWebView reactWebView = (RNCWebView) webView;
       reactWebView.callInjectedJavaScriptBeforeContentLoaded();
+    }
+
+    /**
+     * The engine committed a document for the main frame and is about to paint
+     * it. Fires once per committed navigation, never for same-document
+     * (pushState) changes and never for a response that rendered nothing. Use
+     * the `url` argument: webView.getUrl() may still be the previous page here.
+     * (CP-15105 B4; iOS counterpart is didCommitNavigation.)
+     */
+    @Override
+    public void onPageCommitVisible(WebView webView, String url) {
+      super.onPageCommitVisible(webView, url);
+      ((RNCWebView) webView).dispatchEvent(
+        webView,
+        new TopCommitEvent(
+          RNCWebViewWrapper.getReactTagFromWebView(webView),
+          createWebViewEvent(webView, url)));
     }
 
     @Override

@@ -82,6 +82,7 @@ const WebViewComponent = forwardRef<{}, AndroidWebViewProps>(
       onLoadStart,
       onError,
       onLoad,
+      onCommit: onCommitProp,
       onLoadEnd,
       onLoadProgress,
       onHttpError: onHttpErrorProp,
@@ -131,12 +132,14 @@ const WebViewComponent = forwardRef<{}, AndroidWebViewProps>(
       onHttpError,
       onLoadingError,
       onLoadingFinish,
+      onCommit,
       onLoadingProgress,
       onOpenWindow,
       onRenderProcessGone,
     } = useWebViewLogic({
       onNavigationStateChange,
       onLoad,
+      onCommitProp,
       onError,
       onHttpErrorProp,
       onLoadEnd,
@@ -285,6 +288,7 @@ const WebViewComponent = forwardRef<{}, AndroidWebViewProps>(
         hasOnScroll={!!otherProps.onScroll}
         onLoadingError={onLoadingError}
         onLoadingFinish={onLoadingFinish}
+        onCommit={onCommitProp && onCommit}
         onLoadingProgress={onLoadingProgress}
         onLoadingStart={onLoadingStart}
         onHttpError={onHttpError}
