@@ -284,6 +284,10 @@ export interface NativeProps extends ViewProps {
   messagingEnabled: boolean;
   onLoadingError: DirectEventHandler<WebViewErrorEvent>;
   onLoadingFinish: DirectEventHandler<WebViewNavigationEvent>;
+  // didCommitNavigation (iOS) / onPageCommitVisible (Android). Declared here so
+  // codegen emits RNCWebViewEventEmitter::OnCommit; without it the iOS native
+  // side does not compile (CP-15105 B3).
+  onCommit: DirectEventHandler<WebViewNavigationEvent>;
   onLoadingProgress: DirectEventHandler<WebViewNativeProgressEvent>;
   onLoadingStart: DirectEventHandler<WebViewNavigationEvent>;
   onHttpError: DirectEventHandler<WebViewHttpErrorEvent>;

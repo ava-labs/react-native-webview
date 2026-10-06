@@ -1232,6 +1232,14 @@ export interface WebViewSharedProps extends ViewProps {
   onLoad?: (event: WebViewNavigationEvent) => void;
 
   /**
+   * Invoked when a navigation commits a real document (Android
+   * onPageCommitVisible / iOS didCommitNavigation). Unlike `onLoad` it never
+   * fires for a navigation that rendered nothing (HTTP 204, window.stop()), so
+   * it is the trustworthy signal for an address bar or origin pinning.
+   */
+  onCommit?: (event: WebViewNavigationEvent) => void;
+
+  /**
    * Function that is invoked when the `WebView` load succeeds or fails.
    */
   onLoadEnd?: (event: WebViewNavigationEvent | WebViewErrorEvent) => void;
