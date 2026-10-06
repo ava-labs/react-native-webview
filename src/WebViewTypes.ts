@@ -1232,10 +1232,12 @@ export interface WebViewSharedProps extends ViewProps {
   onLoad?: (event: WebViewNavigationEvent) => void;
 
   /**
-   * Invoked when a navigation commits a real document (Android
-   * onPageCommitVisible / iOS didCommitNavigation). Unlike `onLoad` it never
-   * fires for a navigation that rendered nothing (HTTP 204, window.stop()), so
-   * it is the trustworthy signal for an address bar or origin pinning.
+   * Invoked when a navigation commits a real document (iOS
+   * didCommitNavigation, Android onPageCommitVisible, API 23+). Unlike `onLoad`
+   * it does not fire for HTTP 204 or `window.stop()` on iOS. Prefer it over
+   * `onLoadingStart` for address-bar and origin updates. On Android it fires
+   * later than on iOS and is not ordered relative to `onMessage`; `title` may be
+   * stale there, so rely on `url`.
    */
   onCommit?: (event: WebViewNavigationEvent) => void;
 

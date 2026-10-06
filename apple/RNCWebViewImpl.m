@@ -1596,15 +1596,17 @@ static NSString *RNCFrameSecurityOrigin(WKSecurityOrigin *origin)
  * Called when the web view begins to receive content for the main frame, i.e.
  * the navigation has COMMITTED and a new document is about to be rendered.
  *
- * This is the iOS counterpart of Android's `onPageCommitVisible`. It is a
- * strictly stronger signal than `didFinishNavigation` for anything that must
- * reflect the document actually on screen — most importantly the address bar:
- * `didFinishNavigation` also fires for navigations that produced no document
- * (HTTP 204/205 No Content, a `window.stop()` before the response is
- * committed), where WebKit advances the URL while keeping the previous
- * document rendered. Those never reach this callback, so a consumer that
- * commits the URL here cannot be made to display a URL whose page never
- * rendered (address-bar spoofing).
+ * This is the iOS counterpart of Android's `onPageCommitVisible` (which fires
+ * later). It fires when WebKit has committed the navigation and received the
+ * first bytes of the main-frame document. `didFinishNavigation` also fires for
+ * navigations that produced no document (HTTP 204/205 No Content, a
+ * `window.stop()` before the response is committed); those do not reach this
+ * callback.
+ *
+ * The payload reads `webView.URL` at callback time (WebKit's active URL), so
+ * consumers should pin origins on this event rather than on
+ * `onLoadingStart`/`onLoadingFinish`, but should not treat it as proof that
+ * content rendered.
  */
 - (void)webView:(WKWebView *)webView
 didCommitNavigation:(WKNavigation *)navigation

@@ -56,9 +56,11 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
 @property (nonatomic, copy) RCTDirectEventBlock onFileDownload;
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingStart;
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingFinish;
-// didCommitNavigation — the navigation actually committed a document and is
-// about to render. Counterpart of Android's onPageCommitVisible; unlike
-// onLoadingFinish it never fires for a navigation that rendered nothing.
+// didCommitNavigation — WebKit committed the navigation and received the
+// first bytes of the main-frame document. Counterpart of Android's
+// onPageCommitVisible (which fires later). Unlike onLoadingFinish it does not
+// fire for HTTP 204/205 or a window.stop() before commit. Not proof that
+// content rendered.
 @property (nonatomic, copy) RCTDirectEventBlock onCommit;
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingError;
 @property (nonatomic, copy) RCTDirectEventBlock onLoadingProgress;

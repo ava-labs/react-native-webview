@@ -96,10 +96,21 @@ public class RNCWebViewClient extends WebViewClient {
     }
 
     /**
-     * The engine committed a document for the main frame and is about to paint
-     * it. Fires once per committed navigation, never for same-document
-     * (pushState) changes and never for a response that rendered nothing. Use
-     * the `url` argument: webView.getUrl() may still be the previous page here.
+     * Fires when the WebView will no longer draw the previous page's content
+     * for the main frame: the engine has committed the main-frame document and
+     * is about to paint it. This is LATER than iOS didCommitNavigation: the body
+     * is already in the DOM, and inline head scripts and document-start injected
+     * JS have already run.
+     *
+     * Delivery is through the RN EventDispatcher, which is NOT ordered relative
+     * to onMessage (a direct JS-module call), so a new document's first
+     * postMessages can reach JS before this event.
+     *
+     * Requires API 23+; never fires on API 21-22. Same-document (pushState)
+     * navigations do not fire it. Use the `url` argument only: webView.getUrl()
+     * may still be the previous page here, and the `title` in the payload is read
+     * from webView.getTitle() at commit time and may still be the previous
+     * page's.
      * (CP-15105 B4; iOS counterpart is didCommitNavigation.)
      */
     @Override
