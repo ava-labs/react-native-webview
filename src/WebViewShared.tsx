@@ -101,6 +101,7 @@ export const useWebViewLogic = ({
   onNavigationStateChange,
   onLoadStart,
   onLoad,
+  onCommitProp,
   onLoadProgress,
   onLoadEnd,
   onError,
@@ -117,6 +118,7 @@ export const useWebViewLogic = ({
   onNavigationStateChange?: (event: WebViewNavigation) => void;
   onLoadStart?: (event: WebViewNavigationEvent) => void;
   onLoad?: (event: WebViewNavigationEvent) => void;
+  onCommitProp?: (event: WebViewNavigationEvent) => void;
   onLoadProgress?: (event: WebViewProgressEvent) => void;
   onLoadEnd?: (event: WebViewNavigationEvent | WebViewErrorEvent) => void;
   onError?: (event: WebViewErrorEvent) => void;
@@ -203,6 +205,15 @@ export const useWebViewLogic = ({
   );
   // !iOS Only
 
+  // didCommitNavigation (iOS) / onPageCommitVisible (Android). Pure forward;
+  // viewState is driven by onLoadingFinish, not by commit.
+  const onCommit = useCallback(
+    (event: WebViewNavigationEvent) => {
+      onCommitProp?.(event);
+    },
+    [onCommitProp]
+  );
+
   const onLoadingFinish = useCallback(
     (event: WebViewNavigationEvent) => {
       onLoad?.(event);
@@ -271,6 +282,7 @@ export const useWebViewLogic = ({
     onLoadingProgress,
     onLoadingError,
     onLoadingFinish,
+    onCommit,
     onHttpError,
     onRenderProcessGone,
     onContentProcessDidTerminate,
