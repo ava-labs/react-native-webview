@@ -25,6 +25,7 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIManagerHelper;
+import com.reactnativecommunity.webview.events.TopCommitEvent;
 import com.reactnativecommunity.webview.events.TopHttpErrorEvent;
 import com.reactnativecommunity.webview.events.TopLoadingErrorEvent;
 import com.reactnativecommunity.webview.events.TopLoadingFinishEvent;
@@ -92,6 +93,34 @@ public class RNCWebViewClient extends WebViewClient {
 
       RNCWebView reactWebView = (RNCWebView) webView;
       reactWebView.callInjectedJavaScriptBeforeContentLoaded();
+    }
+
+    /**
+     * Fires when the WebView will no longer draw the previous page's content
+     * for the main frame: the engine has committed the main-frame document and
+     * is about to paint it. This is LATER than iOS didCommitNavigation: the body
+     * is already in the DOM, and inline head scripts and document-start injected
+     * JS have already run.
+     *
+     * Delivery is through the RN EventDispatcher, which is NOT ordered relative
+     * to onMessage (a direct JS-module call), so a new document's first
+     * postMessages can reach JS before this event.
+     *
+     * Requires API 23+; never fires on API 21-22. Same-document (pushState)
+     * navigations do not fire it. Use the `url` argument only: webView.getUrl()
+     * may still be the previous page here, and the `title` in the payload is read
+     * from webView.getTitle() at commit time and may still be the previous
+     * page's.
+     * (CP-15105 B4; iOS counterpart is didCommitNavigation.)
+     */
+    @Override
+    public void onPageCommitVisible(WebView webView, String url) {
+      super.onPageCommitVisible(webView, url);
+      ((RNCWebView) webView).dispatchEvent(
+        webView,
+        new TopCommitEvent(
+          RNCWebViewWrapper.getReactTagFromWebView(webView),
+          createWebViewEvent(webView, url)));
     }
 
     @Override

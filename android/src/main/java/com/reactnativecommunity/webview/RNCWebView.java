@@ -257,7 +257,11 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
             this.bridgeListener = new WebViewCompat.WebMessageListener() {
               @Override
               public void onPostMessage(@NonNull WebView view, @NonNull WebMessageCompat message, @NonNull Uri sourceOrigin, boolean isMainFrame, @NonNull JavaScriptReplyProxy replyProxy) {
-                RNCWebView.this.onMessage(message.getData(), sourceOrigin.toString());
+                // The listener is registered for all origins ("*"), so ANY frame
+                // — including a cross-origin iframe — can post here. Forward the
+                // frame provenance the platform gives us so JS can authenticate
+                // the sender instead of guessing.
+                RNCWebView.this.onMessage(message.getData(), sourceOrigin.toString(), isMainFrame, sourceOrigin.toString());
               }
             };
             WebViewCompat.addWebMessageListener(
@@ -329,6 +333,13 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
     }
 
     public void onMessage(String message, String sourceUrl) {
+        // Legacy addJavascriptInterface bridge: Android exposes a @JavascriptInterface
+        // object to every frame and gives no way to tell them apart, so frame
+        // provenance is genuinely unknown here (null, not false).
+        onMessage(message, sourceUrl, null, null);
+    }
+
+    public void onMessage(String message, String sourceUrl, @Nullable Boolean isMainFrame, @Nullable String frameOrigin) {
         ThemedReactContext reactContext = getThemedReactContext();
         RNCWebView mWebView = this;
 
@@ -342,6 +353,7 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
                     }
                     WritableMap data = mRNCWebViewClient.createWebViewEvent(webView, sourceUrl);
                     data.putString("data", message);
+                    putFrameProvenance(data, isMainFrame, frameOrigin);
 
                     if (mMessagingJSModule != null) {
                         dispatchDirectMessage(data);
@@ -353,12 +365,27 @@ public class RNCWebView extends WebView implements LifecycleEventListener {
         } else {
             WritableMap eventData = Arguments.createMap();
             eventData.putString("data", message);
+            putFrameProvenance(eventData, isMainFrame, frameOrigin);
 
             if (mMessagingJSModule != null) {
                 dispatchDirectMessage(eventData);
             } else {
                 dispatchEvent(this, new TopMessageEvent(RNCWebViewWrapper.getReactTagFromWebView(this), eventData));
             }
+        }
+    }
+
+    /**
+     * Adds the posting frame's provenance to a message event. Keys are omitted
+     * entirely when unknown so JS sees `undefined` and can fail closed, rather
+     * than a `false`/`""` that would read as a real answer.
+     */
+    private static void putFrameProvenance(WritableMap data, @Nullable Boolean isMainFrame, @Nullable String frameOrigin) {
+        if (isMainFrame != null) {
+            data.putBoolean("isMainFrame", isMainFrame);
+        }
+        if (frameOrigin != null) {
+            data.putString("frameOrigin", frameOrigin);
         }
     }
 

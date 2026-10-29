@@ -769,6 +769,29 @@ RCTAutoInsetsProtocol>
 #endif
 
 /**
+ * Serializes a frame's true security origin — as reported by WebKit, not as
+ * claimed by page JS — into the same "scheme://host[:port]" shape as JS's
+ * `new URL(url).origin`, so the two can be compared directly.
+ *
+ * Returns @"" for opaque origins (about:blank, data:, srcdoc, sandboxed
+ * frames), which callers must treat as "origin unknown" rather than as a
+ * match against anything.
+ */
+static NSString *RNCFrameSecurityOrigin(WKSecurityOrigin *origin)
+{
+  if (origin.protocol.length == 0 || origin.host.length == 0) {
+    return @"";
+  }
+  BOOL isDefaultPort = origin.port == 0 ||
+    ([origin.protocol isEqualToString:@"https"] && origin.port == 443) ||
+    ([origin.protocol isEqualToString:@"http"] && origin.port == 80);
+  if (isDefaultPort) {
+    return [NSString stringWithFormat:@"%@://%@", origin.protocol, origin.host];
+  }
+  return [NSString stringWithFormat:@"%@://%@:%ld", origin.protocol, origin.host, (long)origin.port];
+}
+
+/**
  * This method is called whenever JavaScript running within the web view calls:
  *   - window.webkit.messageHandlers[MessageHandlerName].postMessage
  */
@@ -786,6 +809,14 @@ RCTAutoInsetsProtocol>
       NSMutableDictionary<NSString *, id> *event = [self baseEvent];
       [event addEntriesFromDictionary: @{@"data": message.body}];
       [event addEntriesFromDictionary: @{@"url": message.frameInfo.request.URL.absoluteString}];
+      // Frame provenance straight from WebKit. `window.webkit.messageHandlers`
+      // is reachable from EVERY frame (the handler is registered on the
+      // userContentController, not per-frame), so a cross-origin iframe can
+      // post messages that JS alone cannot distinguish from the main frame's.
+      // WKFrameInfo is filled in by WebKit and cannot be forged by page JS, so
+      // these two fields let JS authenticate the sender.
+      [event addEntriesFromDictionary: @{@"isMainFrame": @(message.frameInfo.isMainFrame)}];
+      [event addEntriesFromDictionary: @{@"frameOrigin": RNCFrameSecurityOrigin(message.frameInfo.securityOrigin)}];
       _onMessage(event);
     }
   }
@@ -1558,6 +1589,30 @@ RCTAutoInsetsProtocol>
 {
   if (_ignoreSilentHardwareSwitch) {
     [self disableIgnoreSilentSwitch];
+  }
+}
+
+/**
+ * Called when the web view begins to receive content for the main frame, i.e.
+ * the navigation has COMMITTED and a new document is about to be rendered.
+ *
+ * This is the iOS counterpart of Android's `onPageCommitVisible` (which fires
+ * later). It fires when WebKit has committed the navigation and received the
+ * first bytes of the main-frame document. `didFinishNavigation` also fires for
+ * navigations that produced no document (HTTP 204/205 No Content, a
+ * `window.stop()` before the response is committed); those do not reach this
+ * callback.
+ *
+ * The payload reads `webView.URL` at callback time (WebKit's active URL), so
+ * consumers should pin origins on this event rather than on
+ * `onLoadingStart`/`onLoadingFinish`, but should not treat it as proof that
+ * content rendered.
+ */
+- (void)webView:(WKWebView *)webView
+didCommitNavigation:(WKNavigation *)navigation
+{
+  if (_onCommit) {
+    _onCommit([self baseEvent]);
   }
 }
 

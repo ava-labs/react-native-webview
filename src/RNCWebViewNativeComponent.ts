@@ -29,6 +29,19 @@ export type WebViewMessageEvent = Readonly<{
   canGoForward: boolean;
   lockIdentifier: Double;
   data: string;
+  /**
+   * Whether the frame that posted this message is the main frame, as reported
+   * by the platform (WKFrameInfo on iOS, WebMessageListener on Android). Page
+   * JS cannot forge it. Android's legacy addJavascriptInterface bridge cannot
+   * report it, so a missing value means "unknown", not "main frame".
+   */
+  isMainFrame: boolean;
+  /**
+   * The posting frame's true security origin as "scheme://host[:port]", or ''
+   * for opaque origins (about:blank, data:, srcdoc, sandboxed). Independent of
+   * any origin the page claims inside the message body.
+   */
+  frameOrigin: string;
 }>;
 export type WebViewOpenWindowEvent = Readonly<{
   targetUrl: string;
@@ -271,6 +284,10 @@ export interface NativeProps extends ViewProps {
   messagingEnabled: boolean;
   onLoadingError: DirectEventHandler<WebViewErrorEvent>;
   onLoadingFinish: DirectEventHandler<WebViewNavigationEvent>;
+  // didCommitNavigation (iOS) / onPageCommitVisible (Android). Declared here so
+  // codegen emits RNCWebViewEventEmitter::OnCommit; without it the iOS native
+  // side does not compile (CP-15105 B3).
+  onCommit?: DirectEventHandler<WebViewNavigationEvent>;
   onLoadingProgress: DirectEventHandler<WebViewNativeProgressEvent>;
   onLoadingStart: DirectEventHandler<WebViewNavigationEvent>;
   onHttpError: DirectEventHandler<WebViewHttpErrorEvent>;

@@ -18,6 +18,7 @@ This document lays out the current public properties and methods for the React N
 - [`onRenderProcessGone`](Reference.md#onRenderProcessGone)
 - [`onLoad`](Reference.md#onload)
 - [`onLoadEnd`](Reference.md#onloadend)
+- [`onCommit`](Reference.md#oncommit)
 - [`onLoadStart`](Reference.md#onloadstart)
 - [`onLoadProgress`](Reference.md#onloadprogress)
 - [`onHttpError`](Reference.md#onhttperror)
@@ -430,6 +431,30 @@ url
 
 ---
 
+### `onCommit`[⬆](#props-index)
+
+Function that is invoked when a navigation commits a real document (iOS `didCommitNavigation`, Android `onPageCommitVisible`). Unlike `onLoad` it does not fire for HTTP 204 or `window.stop()` on iOS, so prefer it over `onLoadingStart` for address-bar and origin updates. On Android it fires later than on iOS (the body is already in the DOM and document-start injected JS has run) and is not ordered relative to `onMessage`, so a new document's first messages can arrive before it; `title` may still be the previous page's there, so rely on `url`. Android requires API 23+ and same-document (`pushState`) navigations do not fire it.
+
+| Type     | Required | Platforms              |
+| -------- | -------- | ---------------------- |
+| function | No       | iOS, Android (API 23+) |
+
+Example:
+
+```jsx
+<WebView
+  source={{ uri: 'https://reactnative.dev' }}
+  onCommit={(syntheticEvent) => {
+    const { nativeEvent } = syntheticEvent;
+    this.url = nativeEvent.url;
+  }}
+/>
+```
+
+The event object is the same `WebViewNavigationEvent` as `onLoad` (`url`, `title`, `loading`, `canGoBack`, `canGoForward`), with no extra fields.
+
+---
+
 ### `onLoadStart`[⬆](#props-index)
 
 Function that is invoked when the `WebView` starts loading.
@@ -583,6 +608,8 @@ Function that is invoked when the webview calls `window.ReactNativeWebView.postM
 | Type     | Required |
 | -------- | -------- |
 | function | No       |
+
+The event also carries `isMainFrame` and `frameOrigin`, provided by the platform for the frame that posted the message. Both are absent (`undefined`) on the legacy Android `addJavascriptInterface` bridge. `frameOrigin` is `""` on iOS for opaque origins and may be the literal string `"null"` on Android; treat both as unknown.
 
 To learn more, read the [Communicating between JS and Native](Guide.md#communicating-between-js-and-native) guide.
 

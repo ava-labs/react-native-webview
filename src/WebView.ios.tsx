@@ -66,6 +66,7 @@ const WebViewComponent = forwardRef<{}, IOSWebViewProps>(
       onLoadStart,
       onError,
       onLoad,
+      onCommit: onCommitProp,
       onLoadEnd,
       onLoadProgress,
       onContentProcessDidTerminate: onContentProcessDidTerminateProp,
@@ -115,12 +116,14 @@ const WebViewComponent = forwardRef<{}, IOSWebViewProps>(
       onHttpError,
       onLoadingError,
       onLoadingFinish,
+      onCommit,
       onLoadingProgress,
       onOpenWindow,
       onContentProcessDidTerminate,
     } = useWebViewLogic({
       onNavigationStateChange,
       onLoad,
+      onCommitProp,
       onError,
       onHttpErrorProp,
       onLoadEnd,
@@ -242,6 +245,7 @@ const WebViewComponent = forwardRef<{}, IOSWebViewProps>(
         messagingModuleName="" // android ONLY
         onLoadingError={onLoadingError}
         onLoadingFinish={onLoadingFinish}
+        onCommit={onCommitProp && onCommit}
         onLoadingProgress={onLoadingProgress}
         onFileDownload={onFileDownload}
         onLoadingStart={onLoadingStart}

@@ -39,6 +39,15 @@ auto stringToOnLoadingFinishNavigationTypeEnum(std::string value) {
     return RNCWebViewEventEmitter::OnLoadingFinishNavigationType::Other;
 }
 
+auto stringToOnCommitNavigationTypeEnum(std::string value) {
+    if (value == "click") return RNCWebViewEventEmitter::OnCommitNavigationType::Click;
+    if (value == "formsubmit") return RNCWebViewEventEmitter::OnCommitNavigationType::Formsubmit;
+    if (value == "backforward") return RNCWebViewEventEmitter::OnCommitNavigationType::Backforward;
+    if (value == "reload") return RNCWebViewEventEmitter::OnCommitNavigationType::Reload;
+    if (value == "formresubmit") return RNCWebViewEventEmitter::OnCommitNavigationType::Formresubmit;
+    return RNCWebViewEventEmitter::OnCommitNavigationType::Other;
+}
+
 @interface RNCWebView () <RCTRNCWebViewViewProtocol>
 
 @end
@@ -134,7 +143,12 @@ auto stringToOnLoadingFinishNavigationTypeEnum(std::string value) {
                     .canGoBack = static_cast<bool>([[dictionary valueForKey:@"canGoBack"] boolValue]),
                     .canGoForward = static_cast<bool>([[dictionary valueForKey:@"canGoForward"] boolValue]),
                     .loading = static_cast<bool>([[dictionary valueForKey:@"loading"] boolValue]),
-                    .data = std::string([[dictionary valueForKey:@"data"] UTF8String])
+                    .data = std::string([[dictionary valueForKey:@"data"] UTF8String]),
+                    // Unforgeable frame provenance (see RNCFrameSecurityOrigin in
+                    // RNCWebViewImpl.m). It has to be carried through the codegen
+                    // struct or JS never sees it on the new architecture.
+                    .isMainFrame = static_cast<bool>([[dictionary valueForKey:@"isMainFrame"] boolValue]),
+                    .frameOrigin = std::string([[dictionary valueForKey:@"frameOrigin"] UTF8String] ?: "")
                 };
                 webViewEventEmitter->onMessage(data);
             }
@@ -153,6 +167,29 @@ auto stringToOnLoadingFinishNavigationTypeEnum(std::string value) {
                     .mainDocumentURL = std::string([[dictionary valueForKey:@"mainDocumentURL"] UTF8String], [[dictionary valueForKey:@"mainDocumentURL"] lengthOfBytesUsingEncoding:NSUTF8StringEncoding])
                 };
                 webViewEventEmitter->onLoadingFinish(data);
+            }
+        };
+        // didCommitNavigation. `baseEvent` carries no navigationType /
+        // mainDocumentURL (WebKit does not report either at commit time), so
+        // read them defensively — a nil NSString would otherwise be handed to
+        // std::string.
+        _view.onCommit = [self](NSDictionary* dictionary) {
+            if (_eventEmitter) {
+                auto webViewEventEmitter = std::static_pointer_cast<RNCWebViewEventEmitter const>(_eventEmitter);
+                NSString *navigationType = [dictionary valueForKey:@"navigationType"] ?: @"";
+                NSString *mainDocumentURL = [dictionary valueForKey:@"mainDocumentURL"] ?: @"";
+                // Field order follows the generated OnCommit struct.
+                facebook::react::RNCWebViewEventEmitter::OnCommit data = {
+                    .url = std::string([[dictionary valueForKey:@"url"] UTF8String] ?: ""),
+                    .loading = static_cast<bool>([[dictionary valueForKey:@"loading"] boolValue]),
+                    .title = std::string([[dictionary valueForKey:@"title"] UTF8String] ?: ""),
+                    .canGoBack = static_cast<bool>([[dictionary valueForKey:@"canGoBack"] boolValue]),
+                    .canGoForward = static_cast<bool>([[dictionary valueForKey:@"canGoForward"] boolValue]),
+                    .lockIdentifier = [[dictionary valueForKey:@"lockIdentifier"] doubleValue],
+                    .navigationType = stringToOnCommitNavigationTypeEnum(std::string(navigationType.UTF8String)),
+                    .mainDocumentURL = std::string(mainDocumentURL.UTF8String)
+                };
+                webViewEventEmitter->onCommit(data);
             }
         };
         _view.onLoadingProgress = [self](NSDictionary* dictionary) {
