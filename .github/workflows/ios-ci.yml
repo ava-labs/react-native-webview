@@ -4,8 +4,12 @@ on:
     branches:
       - master
   pull_request:
+permissions: {}
+
 jobs:
   build:
+    permissions:
+      contents: read
     strategy:
       matrix:
         extraEnv: [FOO=BAR, RCT_NEW_ARCH_ENABLED=1]
@@ -13,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
